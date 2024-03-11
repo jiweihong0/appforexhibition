@@ -3,7 +3,7 @@ import getEnvironmentVariable from "@/lib/getEnvironmentVariable";
 import { readUserId } from "@/lib/store/userId";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Box, CheckIcon, ScrollView, Select, Spinner, View, useToast } from "native-base";
+import { Box, CheckIcon, ScrollView, Select, Spinner, View, useToast, Text } from "native-base";
 import { useEffect, useState } from "react";
 import { Dimensions, Image } from "react-native";
 import { Zoom } from 'react-native-reanimated-zoom';
@@ -12,6 +12,7 @@ export default function ShowHistoryImageScreen() {
   const { date } = useLocalSearchParams<{ date: string }>();
   const [imageBase64, setImageBase64] = useState<string | null>(null)
   const [dates, setDates] = useState<string[]>([])
+  const [text, setText] = useState<{data: string,dataangle: string, result:string} | null>(null)
   const toast = useToast()
   const router = useRouter()
 
@@ -35,16 +36,36 @@ export default function ShowHistoryImageScreen() {
         return
       }
 
-      const [base64, dates] = await Promise.all([
+      const [base64, dates,text] = await Promise.all([
         fetchImage(patienId, date),
-        fetchDates(patienId)
+        fetchDates(patienId),
+        fetchText(patienId, date)
       ])
 
       setDates(dates)
       setImageBase64(base64)
+      setText(text)
 
     })()
   }, [])
+
+  const fetchText = async (patientId: string, date: string) => {
+    try {
+      const { API_URL } = getEnvironmentVariable()
+      const res = await fetch(`${API_URL}/getText/${patientId}?datetime=${date}`)
+      const data = await res.json()
+      console.log(data.data);
+      
+      return data.data
+    } catch (error) {
+      toast.show({
+        title: "發生錯誤",
+        description: "請稍後再試",
+        placement: "top",
+      })
+    
+    }
+  }
 
   const fetchImage = async (patientId: string, date: string) => {
     try {
@@ -102,6 +123,19 @@ export default function ShowHistoryImageScreen() {
             {dates?.map((date) => <Select.Item key={date} label={date} value={date} />)}
           </Select>
         </Box>
+        <Text>傾斜角度（垂直參考點）：{
+          text === null && "加載中"
+          }{
+            text!== null && text?.dataangle
+          }
+          </Text>
+        <Text>判定結果：{
+          text === null && "加載中"
+          }{
+            text !== null && text?.result
+          }</Text>
+
+
         <Zoom>
           <ScrollView horizontal>
             {imageBase64 === null && <Spinner size="lg" />}
