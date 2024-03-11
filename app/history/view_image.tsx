@@ -12,7 +12,7 @@ export default function ShowHistoryImageScreen() {
   const { date } = useLocalSearchParams<{ date: string }>();
   const [imageBase64, setImageBase64] = useState<string | null>(null)
   const [dates, setDates] = useState<string[]>([])
-  const [text, setText] = useState<{data: string,dataangle: string, result:string} | null>(null)
+  const [text, setText] = useState<{data: string,dataangle: string, result:string, suggest:string} | null>(null)
   const toast = useToast()
   const router = useRouter()
 
@@ -123,19 +123,24 @@ export default function ShowHistoryImageScreen() {
             {dates?.map((date) => <Select.Item key={date} label={date} value={date} />)}
           </Select>
         </Box>
-        <Text>傾斜角度（垂直參考點）：{
-          text === null && "加載中"
-          }{
-            text!== null && text?.dataangle
-          }
-          </Text>
         <Text>判定結果：{
           text === null && "加載中"
           }{
             text !== null && text?.result
           }</Text>
-
-
+        <Text>傾斜角度（脊椎）：{
+          text === null && "加載中"
+          }{
+            text!== null && text?.dataangle
+          }
+          </Text>
+        <Text>
+          建議：{
+            text === null && "加載中"
+          }{
+            text !== null && text?.suggest
+          }
+        </Text>
         <Zoom>
           <ScrollView horizontal>
             {imageBase64 === null && <Spinner size="lg" />}
