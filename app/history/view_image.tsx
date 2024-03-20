@@ -19,6 +19,21 @@ export default function ShowHistoryImageScreen() {
   const screenWidth = Dimensions.get('window').width
   const photoHeight = Dimensions.get('window').height * 0.8
 
+  const [loading, setLoading] = useState(true);
+
+  const handleLoadStart = () => {
+    setLoading(true);
+  };
+
+  const handleLoadEnd = () => {
+    setLoading(false);
+  };
+
+  const handleLoadError = () => {
+    // 處理圖片加載失敗的情況
+    console.log('Image loading failed');
+  };
+
   useEffect(() => {
     (async () => {
       const userId = await readUserId()
@@ -36,15 +51,16 @@ export default function ShowHistoryImageScreen() {
         return
       }
 
-      const [base64, dates,text] = await Promise.all([
-        fetchImage(patienId, date),
+      const [url,dates,text] = await Promise.all([
+        fetchImage(patienId),
         fetchDates(patienId),
         fetchText(patienId, date)
       ])
 
       setDates(dates)
-      setImageBase64(base64)
+      setImageBase64(url)
       setText(text)
+      setLoading(true);
 
     })()
   }, [])
@@ -67,22 +83,14 @@ export default function ShowHistoryImageScreen() {
     }
   }
 
-  const fetchImage = async (patientId: string, date: string) => {
-    try {
+ 
+
+  const fetchImage = (patientId: string) => {
       const { API_URL } = getEnvironmentVariable()
-      const res = await fetch(`${API_URL}/getDateImages/${patientId}?datetime=${date}`)
-      const data = await res.json()
-      const { userImage } = data
-      return userImage
-    } catch (error) {
-      toast.show({
-        title: "發生錯誤",
-        description: "請稍後再試",
-        placement: "top",
-      })
-      router.push("/main/home")
-    }
+      const res =`${API_URL}/get-image/${patientId}`
+      return res
   }
+
 
   const fetchDates = async (patientId: string) => {
     try {
@@ -101,9 +109,6 @@ export default function ShowHistoryImageScreen() {
     }
   }
 
-  const ImageURiFromBuffer = () => {
-    return `data:image/png;base64,${imageBase64}`;
-  };
 
 
   return (
@@ -142,15 +147,21 @@ export default function ShowHistoryImageScreen() {
           }
         </Text>
         <Zoom>
-          <ScrollView horizontal>
-            {imageBase64 === null && <Spinner size="lg" />}
-            {imageBase64 !== null && <Image source={{ uri: ImageURiFromBuffer() }}
+          <ScrollView horizontal >
+          {loading && <Spinner size="lg" />}
+          {imageBase64 && (
+            <Image
+              source={{ uri: imageBase64}}
               alt="patientImage"
               width={screenWidth * 2.5}
               height={photoHeight}
+              onLoadStart={handleLoadStart}
+              onLoadEnd={handleLoadEnd}
+              onError={handleLoadError}
               resizeMode='contain'
             />
-            }
+          )}
+           
           </ScrollView>
         </Zoom>
       </View >
